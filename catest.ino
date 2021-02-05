@@ -3,25 +3,28 @@
 #include <font_8x5.h>
 #include <HT1632.h>
 #include <images.h>
+#include <Encoder.h>
 
 #define MATRIX_BOUNDX 16
 #define MATRIX_BOUNDY 16
+#define ENCODER_DT 8
+#define ENCODER_CLK 2
 
 const byte DATA = 3;
 const byte WR = 4;
-const byte CS = 5;
+const byte CS1 = 5;
+const byte CS2 = 6;
+
+Encoder knob(ENCODER_CLK, ENCODER_DT);
 
 long frame = 0;
+byte rule = 1;
 
-byte physicalLedMap[MATRIX_BOUNDX][MATRIX_BOUNDY] = {
-    {0, 1, 2, 3, 4, 5, 6, 7},
-    {15, 14, 13, 12, 11, 10, 9, 8}};
-
-byte cells[MATRIX_BOUNDX][MATRIX_BOUNDY];
+byte cells[MATRIX_BOUNDY][MATRIX_BOUNDX];
 
 byte simpleCA[MATRIX_BOUNDX] = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
 
-byte rule[8] = {0, 0, 1, 1, 1, 1, 0, 0};
+// byte rule[8] = {0, 0, 0, 1, 1, 1, 1, 0};
 byte neighborConfigurations[8][3] = {{1, 1, 1}, {1, 1, 0}, {1, 0, 1}, {1, 0, 0}, {0, 1, 1}, {0, 1, 0}, {0, 0, 1}, {0, 0, 0}};
 
 byte translationMatrix[16][16][2] = {
@@ -51,7 +54,8 @@ struct inputData
 void setup()
 {
     Serial.begin(115200);
-    HT1632.begin(CS, WR, DATA);
+    HT1632.begin(CS1, CS2, WR, DATA);
+    HT1632.setBrightness(5);
     for (size_t x = 0; x < MATRIX_BOUNDX; x++)
     {
         for (size_t y = 0; y < MATRIX_BOUNDY; y++)
@@ -95,11 +99,24 @@ void update(inputData data)
 
 byte resolveRule(byte neighbors[3])
 {
+    byte ruleArray[8];
+    byte i = 7;
+
+    Serial.print("rule: " + String(rule) + " b");
+
+    for (int mask = 0x80; mask != 0; mask >>= 1)
+    {
+        (rule & mask) ? ruleArray[i] = 1 : ruleArray[i] = 0;
+        (rule & mask) ? Serial.print("1") : Serial.print("0");
+        i--;
+    }
+    Serial.println("");
+
     for (size_t i = 0; i < 8; i++)
     {
         if (neighborConfigurations[i][0] == neighbors[0] && neighborConfigurations[i][1] == neighbors[1] && neighborConfigurations[i][2] == neighbors[2])
         {
-            return rule[i];
+            return ruleArray[i];
         }
     }
 
@@ -108,6 +125,13 @@ byte resolveRule(byte neighbors[3])
 
 void render(inputData data)
 {
+    HT1632.renderTarget(1);
+    HT1632.clear();
+    char buffer[100];
+    HT1632.drawText(itoa(rule, buffer, 10), 8, 8, FONT_5X4, FONT_5X4_END, FONT_5X4_HEIGHT);
+    HT1632.render();
+
+    HT1632.renderTarget(0);
     for (size_t x = 0; x < MATRIX_BOUNDX; x++)
     {
         for (size_t y = 0; y < MATRIX_BOUNDY; y++)
@@ -117,15 +141,14 @@ void render(inputData data)
 
             if (cells[y][x] == 1)
             {
-                HT1632.setPixel(translatedx, translatedy);
+                HT1632.clearPixel(translatedx, translatedy);
             }
             else
             {
-                HT1632.clearPixel(translatedx, translatedy);
+                HT1632.setPixel(translatedx, translatedy);
             }
         }
     }
-
     HT1632.render();
 }
 
@@ -133,9 +156,33 @@ void loop()
 {
     data.frame = frame;
 
+    int rotaryChange = knob.read();
+
+    if (rotaryChange < -1)
+    {
+        rule++;
+        if (rule > 254)
+        {
+            rule = 0;
+        }
+
+        knob.write(0);
+    }
+
+    if (rotaryChange > 1)
+    {
+        rule--;
+        if (rule < 1)
+        {
+            rule = 254;
+        }
+
+        knob.write(0);
+    }
+
     update(data);
     render(data);
     frame++;
 
-    delay(250);
+    delay(100);
 }
