@@ -5,6 +5,7 @@
 #include "FrameContext.h"
 #include "GameOfLifeController.h"
 #include "CellularAutomataController.h"
+#include "VehicleController.h"
 
 #define ENCODER_DT 8
 #define ENCODER_CLK 2
@@ -14,6 +15,7 @@
 #define JOY_X A1
 #define MATRIX_BOUND_X 32
 #define MATRIX_BOUND_Y 16
+#define MAX_CONTROLLERS 3
 
 const byte DATA = 3;
 const byte WR = 4;
@@ -27,10 +29,11 @@ byte (*matrixPtr)[32] = matrix;
 
 GameOfLifeController gofController;
 CellularAutomataController caController;
+VehicleController vehicleController;
 
-Controller *controllers[2] = {&gofController, &caController};
+Controller *controllers[MAX_CONTROLLERS] = {&gofController, &caController, &vehicleController};
 
-byte currentController = 1;
+char currentController = 0;
 
 struct Coordinates
 {
@@ -81,7 +84,7 @@ void setup()
 
 void render(FrameContext frameContext)
 {
-    display.showNumberDec(frameContext.segmentDisplayState, false);
+    display.showNumberDec(frameContext.segmentDisplayState, true);
 
     HT1632.renderTarget(0);
     renderMatrixSlice(frameContext, 0, MATRIX_BOUND_X / 2, 0);
@@ -128,36 +131,38 @@ void loop()
 
     int encoderValue = encoder.read();
 
+    FrameContext frameContext(matrixPtr, 0, encoderValue, joyState);
+
     if (!(encoderValue > 1 || encoderValue < -1))
     {
         encoderValue = 0;
     }
     else
     {
-        if (encoderValue > 1)
+        if (encoderValue < -1)
         {
             currentController++;
-            if (currentController > 1)
+            if (currentController > MAX_CONTROLLERS - 1)
+            {
+                currentController = MAX_CONTROLLERS - 1;
+            }
+        }
+
+        if (encoderValue > 1)
+        {
+            currentController--;
+            if (currentController < 0)
             {
                 currentController = 0;
             }
         }
 
-        if (encoderValue < -1)
-        {
-            currentController--;
-            if (currentController < 0)
-            {
-                currentController = 1;
-            }
-        }
+        controllers[currentController]->enter(frameContext);
         encoder.write(0);
     }
 
-    FrameContext ctx(matrixPtr, 0, encoderValue, joyState);
-
-    FrameContext updatedCtx = controllers[currentController]->update(ctx);
-    render(updatedCtx);
+    FrameContext updatedFrameContext = controllers[currentController]->update(frameContext);
+    render(updatedFrameContext);
 
     delay(20);
 }

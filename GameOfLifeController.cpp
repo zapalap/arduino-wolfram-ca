@@ -12,8 +12,7 @@ GameOfLifeController::GameOfLifeController()
 
 FrameContext GameOfLifeController::update(FrameContext frameContext)
 {
-    // handleEncoder(frameContext.encoderState);
-    // handleJoy(frameContext.joyState);
+    handleJoy(frameContext.joyState);
 
     createNewGenerationAndUpdateMatrix(frameContext);
     generationNumber++;
@@ -127,4 +126,8 @@ void GameOfLifeController::handleEncoder(int encoderState)
 
 void GameOfLifeController::handleJoy(JoyState joyState)
 {
+    if (joyState.x > 580 || joyState.x < 370 || joyState.y > 580 || joyState.y < 370)
+    {
+        initialize();
+    }
 }

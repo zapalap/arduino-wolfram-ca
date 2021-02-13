@@ -7,6 +7,7 @@ class Controller
 {
 public:
     virtual FrameContext update(FrameContext frameContext) = 0;
+    virtual void enter(FrameContext frameContext){};
 };
 
 #endif
