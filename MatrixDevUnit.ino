@@ -1,11 +1,13 @@
 #include <TM1637Display.h>
 #include <HT1632.h>
 #include <Encoder.h>
+#include <arduino-timer.h>
 #include "Controller.h"
 #include "FrameContext.h"
 #include "GameOfLifeController.h"
 #include "CellularAutomataController.h"
 #include "VehicleController.h"
+#include "GameOfLifeController.h"
 
 #define ENCODER_DT 8
 #define ENCODER_CLK 2
@@ -13,6 +15,7 @@
 #define TM1637_DIO 9
 #define JOY_Y A0
 #define JOY_X A1
+#define SELECT_BUTTON 11
 #define MATRIX_BOUND_X 32
 #define MATRIX_BOUND_Y 16
 #define MAX_CONTROLLERS 3
@@ -27,13 +30,20 @@ TM1637Display display(TM1637_CLK, TM1637_DIO);
 byte matrix[16][32];
 byte (*matrixPtr)[32] = matrix;
 
-GameOfLifeController gofController;
+Timer<1, millis> selectDebounceTimer;
+
 CellularAutomataController caController;
 VehicleController vehicleController;
+GameOfLifeController gofController;
 
-Controller *controllers[MAX_CONTROLLERS] = {&gofController, &caController, &vehicleController};
+Controller *controllers[MAX_CONTROLLERS] = {
+    &vehicleController,
+    &caController,
+    &gofController};
 
 char currentController = 0;
+bool selectCheckPendning;
+bool selectPushPending;
 
 struct Coordinates
 {
@@ -72,6 +82,7 @@ void setup()
 
     pinMode(JOY_X, INPUT);
     pinMode(JOY_Y, INPUT);
+    pinMode(SELECT_BUTTON, INPUT_PULLUP);
 
     for (int x = 0; x < 32; x++)
     {
@@ -97,12 +108,18 @@ void render(FrameContext frameContext)
 
 void renderMatrixSlice(FrameContext frameContext, int xStart, int xEnd, int xOffset)
 {
-    for (size_t x = xStart; x < xEnd; x++)
+    for (byte x = xStart; x < xEnd; x++)
     {
-        for (size_t y = 0; y < MATRIX_BOUND_Y; y++)
+        for (byte y = 0; y < MATRIX_BOUND_Y; y++)
         {
             Coordinates translated = translate(x + xOffset, y);
-            if (matrix[y][x] == 1)
+            // 9 marks a transparent pixel
+            if (matrix[y][x] == 9)
+            {
+                continue;
+            }
+
+            if (matrix[y][x] > 0)
             {
                 HT1632.setPixel(translated.x, translated.y);
             }
@@ -125,13 +142,17 @@ Coordinates translate(byte x, byte y)
 
 void loop()
 {
+    selectDebounceTimer.tick();
+
     JoyState joyState;
     joyState.x = analogRead(JOY_X);
     joyState.y = analogRead(JOY_Y);
 
     int encoderValue = encoder.read();
 
-    FrameContext frameContext(matrixPtr, 0, encoderValue, joyState);
+    FrameContext frameContext(matrixPtr, 0, encoderValue, joyState, HIGH);
+
+    handleSelectButton(frameContext);
 
     if (!(encoderValue > 1 || encoderValue < -1))
     {
@@ -139,25 +160,6 @@ void loop()
     }
     else
     {
-        if (encoderValue < -1)
-        {
-            currentController++;
-            if (currentController > MAX_CONTROLLERS - 1)
-            {
-                currentController = MAX_CONTROLLERS - 1;
-            }
-        }
-
-        if (encoderValue > 1)
-        {
-            currentController--;
-            if (currentController < 0)
-            {
-                currentController = 0;
-            }
-        }
-
-        controllers[currentController]->enter(frameContext);
         encoder.write(0);
     }
 
@@ -165,4 +167,42 @@ void loop()
     render(updatedFrameContext);
 
     delay(20);
+}
+
+void handleSelectButton(FrameContext frameContext)
+{
+    byte selectButtonState = digitalRead(SELECT_BUTTON);
+
+    if (!selectCheckPendning && selectButtonState == LOW)
+    {
+        selectCheckPendning = true;
+        selectDebounceTimer.in(100, ensureSelectPushed);
+    }
+
+    if (selectPushPending)
+    {
+        currentController++;
+
+        if (currentController > MAX_CONTROLLERS - 1)
+        {
+            currentController = 0;
+        }
+
+        controllers[currentController]->enter(frameContext);
+        selectPushPending = false;
+    }
+}
+
+bool ensureSelectPushed()
+{
+    int switchState = digitalRead(SELECT_BUTTON);
+
+    if (switchState == LOW)
+    {
+        selectPushPending = true;
+    }
+
+    selectCheckPendning = false;
+
+    return true;
 }

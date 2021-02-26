@@ -23,7 +23,7 @@ FrameContext CellularAutomataController::update(FrameContext frameContext)
 
     frameContext.segmentDisplayState = rule;
 
-    FrameContext updatedCtx(frameContext.matrix, rule, frameContext.encoderState, frameContext.joyState);
+    FrameContext updatedCtx(frameContext.matrix, rule, frameContext.encoderState, frameContext.joyState, frameContext.selectButtonState);
 
     return updatedCtx;
 };

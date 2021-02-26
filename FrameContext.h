@@ -12,11 +12,12 @@ struct JoyState
 class FrameContext
 {
 public:
-    FrameContext(byte (*matrixPtr)[32], int segmentDisplayState, int encoder, JoyState joy);
+    FrameContext(byte (*matrixPtr)[32], int segmentDisplayState, int encoder, JoyState joy, byte selectButton);
     byte (*matrix)[32];
     int encoderState;
     JoyState joyState;
     int segmentDisplayState;
+    byte selectButtonState;
 };
 
 #endif

@@ -22,7 +22,7 @@ FrameContext GameOfLifeController::update(FrameContext frameContext)
         generationNumber = 0;
     }
 
-    FrameContext updatedContext(frameContext.matrix, generationNumber, frameContext.encoderState, frameContext.joyState);
+    FrameContext updatedContext(frameContext.matrix, generationNumber, frameContext.encoderState, frameContext.joyState, frameContext.selectButtonState);
     return updatedContext;
 }
 
