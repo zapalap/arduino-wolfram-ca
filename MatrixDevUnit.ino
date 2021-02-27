@@ -8,6 +8,7 @@
 #include "CellularAutomataController.h"
 #include "VehicleController.h"
 #include "GameOfLifeController.h"
+#include "LanderController.h"
 
 #define ENCODER_DT 8
 #define ENCODER_CLK 2
@@ -18,7 +19,7 @@
 #define SELECT_BUTTON 11
 #define MATRIX_BOUND_X 32
 #define MATRIX_BOUND_Y 16
-#define MAX_CONTROLLERS 3
+#define MAX_CONTROLLERS 4
 
 const byte DATA = 3;
 const byte WR = 4;
@@ -35,8 +36,10 @@ Timer<1, millis> selectDebounceTimer;
 CellularAutomataController caController;
 VehicleController vehicleController;
 GameOfLifeController gofController;
+LanderController landerController;
 
 Controller *controllers[MAX_CONTROLLERS] = {
+    &landerController,
     &vehicleController,
     &caController,
     &gofController};
