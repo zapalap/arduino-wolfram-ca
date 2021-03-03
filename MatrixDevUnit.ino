@@ -19,7 +19,7 @@
 #define SELECT_BUTTON 11
 #define MATRIX_BOUND_X 32
 #define MATRIX_BOUND_Y 16
-#define MAX_CONTROLLERS 4
+#define MAX_CONTROLLERS 3
 
 const byte DATA = 3;
 const byte WR = 4;
@@ -39,7 +39,6 @@ GameOfLifeController gofController;
 LanderController landerController;
 
 Controller *controllers[MAX_CONTROLLERS] = {
-    &landerController,
     &vehicleController,
     &caController,
     &gofController};

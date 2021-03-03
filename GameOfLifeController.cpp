@@ -50,6 +50,7 @@ void GameOfLifeController::createNewGenerationAndUpdateMatrix(FrameContext frame
 void GameOfLifeController::initialize()
 {
     randomSeed(analogRead(A5));
+    generationNumber = 0;
     byte c = random(6);
     for (byte x = 0; x < BOUND_X; x++)
     {
@@ -72,24 +73,24 @@ byte GameOfLifeController::countAliveNeighbors(byte x, byte y)
             int dx = x + nx;
             int dy = y + ny;
 
-            if (dx > BOUND_X)
+            if (dx > BOUND_X - 1)
             {
                 dx = 0;
             }
 
             if (dx < 0)
             {
-                dx = BOUND_X;
+                dx = BOUND_X - 1;
             }
 
-            if (dy > BOUND_Y)
+            if (dy > BOUND_Y - 1)
             {
                 dy = 0;
             }
 
             if (dy < 0)
             {
-                dy = BOUND_Y;
+                dy = BOUND_Y - 1;
             }
 
             alive += currentGen[dy][dx];

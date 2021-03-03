@@ -1,38 +1,42 @@
 #include "Vector.h"
 #include "math.h"
 
-Vector::Vector(double x, double y)
+Vector::Vector()
 {
-    this->x = x;
-    this->y = y;
 }
 
-void Vector::add(Vector vector)
+Vector::Vector(double x1, double y1)
+{
+    x = x1;
+    y = y1;
+}
+
+void Vector::add(const Vector &vector)
 {
     x += vector.x;
     y += vector.y;
 }
 
-Vector Vector::subtract(Vector vector)
+Vector Vector::subtract(const Vector &vector)
 {
-    return *(new Vector(x - vector.x, y - vector.y));
+    return Vector(x - vector.x, y - vector.y);
 }
 
 void Vector::mult(double scalar)
 {
-    x = x * scalar;
-    y = y * scalar;
+    x *= scalar;
+    y *= scalar;
 }
 
 void Vector::div(double scalar)
 {
-    x = x / scalar;
-    y = y / scalar;
+    x /= scalar;
+    y /= scalar;
 }
 
 double Vector::mag()
 {
-    return sqrt(this->x * this->x + this->y * this->y);
+    return sqrt(x * x + y * y);
 }
 
 void Vector::setMag(double mag)
@@ -43,18 +47,18 @@ void Vector::setMag(double mag)
 
 void Vector::normalize()
 {
-    double magnitude = this->mag();
+    double magnitude = mag();
     if (magnitude != 0)
     {
-        this->div(magnitude);
+        div(magnitude);
     }
 }
 
 void Vector::limit(double max)
 {
-    double magnitude = this->mag();
+    double magnitude = mag();
     if (magnitude > max)
     {
-        this->setMag(max);
+        setMag(max);
     }
 }

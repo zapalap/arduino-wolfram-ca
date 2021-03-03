@@ -8,13 +8,13 @@
 class DotMover : public Mover
 {
 public:
-    DotMover(Vector startingLocation);
-    Vector *location;
-    Vector *velocity;
-    Vector *acceleration;
+    DotMover();
+    Vector location;
+    Vector velocity;
+    Vector acceleration;
     void update(FrameContext frameContext);
     void draw(FrameContext frameContext);
-    void applyForce(Vector force);
+    void applyForce(const Vector &force);
 };
 
 #endif

@@ -15,12 +15,14 @@ public:
     void enter(FrameContext frameContext);
 
 private:
-    DotMover *lander;
+    DotMover lander;
+    DotMover attractor;
 
     void handleJoy(JoyState joyState);
-    void serialPrintVector(String name, Vector *vector);
+    void serialPrintVector(String name, const Vector &vector);
     void clearMatrix(FrameContext frameContext);
     void followRandomPoint();
+    void drawMovers(FrameContext frameContext);
 };
 
 #endif

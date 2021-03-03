@@ -7,12 +7,9 @@
 class Mover
 {
 public:
-    Vector *location;
-    Vector *velocity;
-    Vector *acceleration;
     virtual void update(FrameContext frameContext);
     virtual void draw(FrameContext frameContext);
-    virtual void applyForce(Vector force);
+    virtual void applyForce(const Vector &force);
 };
 
 #endif

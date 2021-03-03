@@ -4,11 +4,12 @@
 class Vector
 {
 public:
-    Vector(double x, double y);
+    Vector();
+    Vector(double x1, double y1);
     double x;
     double y;
-    void add(Vector vector);
-    Vector subtract(Vector vector);
+    void add(const Vector &vector);
+    Vector subtract(const Vector &vector);
     void mult(double scalar);
     void div(double scalar);
     double mag();

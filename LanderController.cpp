@@ -2,10 +2,20 @@
 #include "Vector.h"
 #include "Controller.h"
 #include "FrameContext.h"
+#include "DotMover.h"
 
 LanderController::LanderController()
 {
-    lander = new DotMover(*(new Vector(16, 8)));
+    randomSeed(analogRead(A5));
+    Serial.println("Creating lander");
+    lander.location.x = 16;
+    lander.location.y = 8;
+
+    Serial.println("Creating attractor");
+    attractor.location.x = random(0, 31);
+    attractor.location.y = random(0, 15);
+
+    Serial.println("Following...");
     followRandomPoint();
 }
 
@@ -18,16 +28,19 @@ FrameContext LanderController::update(FrameContext frameContext)
     handleJoy(frameContext.joyState);
     clearMatrix(frameContext);
 
-    lander->update(frameContext);
-    lander->draw(frameContext);
+    lander.update(frameContext);
+    serialPrintVector("Vel", lander.velocity);
+    serialPrintVector("Acc", lander.acceleration);
+    serialPrintVector("Loc", lander.location);
+    drawMovers(frameContext);
 
-    FrameContext updatedContext(frameContext.matrix, round(lander->location->x) * 100 + round(lander->location->y), frameContext.encoderState, frameContext.joyState, frameContext.selectButtonState);
+    FrameContext updatedContext(frameContext.matrix, round(attractor.location.x) * 100 + round(attractor.location.y), frameContext.encoderState, frameContext.joyState, frameContext.selectButtonState);
     return updatedContext;
 }
 
-void LanderController::serialPrintVector(String name, Vector *vector)
+void LanderController::serialPrintVector(String name, const Vector &vector)
 {
-    Serial.println(name + ": (x: " + String(vector->x) + ", y: " + String(vector->y) + ")");
+    Serial.println(name + ": (x: " + String(vector.x) + ", y: " + String(vector.y) + ")");
 }
 
 void LanderController::handleJoy(JoyState joyState)
@@ -38,16 +51,29 @@ void LanderController::handleJoy(JoyState joyState)
     }
 }
 
+void LanderController::drawMovers(FrameContext frameContext)
+{
+    Serial.println("Drawing lander");
+    lander.draw(frameContext);
+
+    Serial.println("Drawing attractor");
+    attractor.draw(frameContext);
+}
+
 void LanderController::followRandomPoint()
 {
-    byte rx = random(0, 31);
-    byte ry = random(0, 15);
+    Serial.println("Relocating attractor");
 
-    Vector *attractor = new Vector(rx, ry);
-    Vector force = lander->location->subtract(*attractor);
+    attractor.location.x = random(0, 31);
+    attractor.location.y = random(0, 15);
+
+    Serial.println("Calculating follow force");
+    Vector force = lander.location.subtract(attractor.location);
     force.normalize();
     force.mult(0.3);
-    lander->applyForce(force);
+
+    Serial.println("Calculating follow force");
+    lander.applyForce(force);
 }
 
 void LanderController::clearMatrix(FrameContext frameContext)

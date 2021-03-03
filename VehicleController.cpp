@@ -125,7 +125,7 @@ void VehicleController::generateTerain(FrameContext frameContext)
 {
     byte nextHeight = getRandomHeight();
 
-    for (char x = 0; x < 32; x++)
+    for (char x = 0; x < 31; x++)
     {
         terrain[x] = terrain[x + 1];
     }
